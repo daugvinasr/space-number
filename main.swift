@@ -295,6 +295,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         let menu = NSMenu()
+        let about = NSMenuItem(title: "space-number \(appVersion) (\(appCommit))", action: nil, keyEquivalent: "")
+        about.isEnabled = false
+        menu.addItem(about)
+        menu.addItem(.separator())
         let restart = NSMenuItem(title: "Restart yabai & skhd", action: #selector(restartServices), keyEquivalent: "r")
         restart.target = self
         menu.addItem(restart)
@@ -396,6 +400,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.title = ""
         statusItem.button?.image = renderer.image(for: shown)
     }
+}
+
+if CommandLine.arguments.dropFirst().contains(where: { $0 == "--version" || $0 == "-v" }) {
+    print("space-number \(appVersion) (\(appCommit))")
+    exit(0)
 }
 
 if anotherInstanceIsRunning(at: socketPath) {

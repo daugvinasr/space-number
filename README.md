@@ -13,6 +13,6 @@ brew services start space-number
 ## Build from source
 
 ```sh
-swiftc -O SpaceNumber.swift -o space-number
-./space-number
+make
+./build/space-number
 ```
