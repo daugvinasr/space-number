@@ -42,6 +42,7 @@ struct Cell: Equatable {
     let index: Int
     let focused: Bool
     let visible: Bool
+    let occupied: Bool
     let fullscreen: Bool
 }
 
@@ -244,7 +245,8 @@ final class CellImageRenderer {
         var x: CGFloat = 0
         for cell in cells {
             var box = NSRect(x: x, y: 0, width: itemSize, height: itemSize)
-            let alpha: CGFloat = cell.visible ? 1 : 0.5
+            // Three tiers: on screen, off screen with windows, off screen and empty.
+            let alpha: CGFloat = cell.visible ? 1 : cell.occupied ? 0.5 : 0.25
             if cell.fullscreen {
                 // Stroke straddles the path, so pull it half a linewidth inward
                 // to keep it inside the box.
@@ -384,14 +386,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let ignoredWindows = Set((windows ?? [])
             .filter { $0.isSticky || !$0.hasAXReference }
             .map(\.id))
-        let shown = spaces.filter {
-            !$0.windows.allSatisfy(ignoredWindows.contains) || $0.isVisible
+        // Every space is shown, empty or not; macOS 27 animates status item
+        // width changes, so the row should only change width when a space is
+        // actually created or destroyed. Emptiness is signalled by opacity.
+        let shown = spaces.map {
+            Cell(index: $0.index, focused: $0.hasFocus, visible: $0.isVisible,
+                 occupied: !$0.windows.allSatisfy(ignoredWindows.contains),
+                 fullscreen: $0.isNativeFullscreen
+                     || $0.windows.contains(where: fullscreenWindows.contains))
         }
-            .map {
-                Cell(index: $0.index, focused: $0.hasFocus, visible: $0.isVisible,
-                     fullscreen: $0.isNativeFullscreen
-                         || $0.windows.contains(where: fullscreenWindows.contains))
-            }
 
         // Skip re-rendering (and menu bar redraw) when nothing changed.
         if shown == lastShown { return }
